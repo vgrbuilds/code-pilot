@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const repoSchema = new mongoose.Schema({
     repo_name:{
@@ -9,7 +9,8 @@ const repoSchema = new mongoose.Schema({
     repo_url:{
         type: String,
         required: true,
-        minlength: 6
+        unique:true,
+        index:true
     },
     tags:{
         type: [String],
@@ -18,6 +19,10 @@ const repoSchema = new mongoose.Schema({
     languages:{
         type: [String],
         default: []
-    },
+    }
+}, {
     timestamps: true
-})
+});
+
+const Repo = mongoose.model('Repo', repoSchema);
+export default Repo;
