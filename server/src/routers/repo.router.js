@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/", createRepo);
 router.get("/", getAllRepos);
-router.get("/:id", getRepoById);
 router.get("/filter", getRepoByFilter);
+router.get("/:id", getRepoById);
 
 export default router;
