@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
-import HomePage from "./pages/HomePage";
+import LibPage from "./pages/LibPage";
+import RepoPage from "./pages/RepoPage";
+import ProfilePage from "./pages/ProfilePage";
+import MainLayout from "./components/MainLayout";
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -16,5 +20,20 @@ export default function App() {
     };
   }, []);
 
-  return token ? <HomePage /> : <LandingPage />;
+  if (!token) {
+    return <LandingPage />;
+  }
+
+  return (
+    <Router>
+      <MainLayout>
+        <Routes>
+          <Route path="/library" element={<LibPage />} />
+          <Route path="/repo/:id" element={<RepoPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="*" element={<Navigate to="/library" replace />} />
+        </Routes>
+      </MainLayout>
+    </Router>
+  );
 }
