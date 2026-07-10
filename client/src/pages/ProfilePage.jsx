@@ -197,7 +197,16 @@ export default function ProfilePage() {
                           Resume Chat
                         </Button>
                       ]}
-                      style={{ borderBottom: "1px solid var(--border)" }}
+                      style={{ 
+                        borderBottom: "1px solid var(--border)",
+                        padding: "1rem",
+                        borderRadius: "8px",
+                        transition: "background 0.2s ease",
+                        cursor: "pointer"
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "var(--accent-bg)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                      onClick={() => navigate(`/repo/${repo._id}`)}
                     >
                       <List.Item.Meta
                         title={<Text strong style={{ fontSize: "1.05rem" }}>{repo.repo_name}</Text>}
