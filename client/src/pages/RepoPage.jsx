@@ -249,7 +249,7 @@ export default function RepoPage() {
 
         <div>
           <Text strong style={{ display: "block", marginBottom: "0.5rem" }}>Languages</Text>
-          <Space size={[0, 4]} wrap>
+          <Space size="small" wrap>
             {repo.languages && repo.languages.length > 0 ? (
               repo.languages.map((lang) => (
                 <Tag color="purple" key={lang}>
@@ -264,7 +264,7 @@ export default function RepoPage() {
 
         <div>
           <Text strong style={{ display: "block", marginBottom: "0.5rem" }}>Tags</Text>
-          <Space size={[0, 4]} wrap>
+          <Space size="small" wrap>
             {repo.tags && repo.tags.length > 0 ? (
               repo.tags.map((tag) => (
                 <Tag color="blue" key={tag}>
