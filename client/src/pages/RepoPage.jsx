@@ -75,10 +75,13 @@ export default function RepoPage() {
     }
   };
 
-  // Helper to parse basic markdown code blocks dynamically
+  // Helper to parse basic markdown elements and escape raw HTML tags safely
   const renderMessageContent = (content) => {
+    // 1. Split by block code blocks
     const parts = content.split(/(```[\s\S]*?```)/g);
+    
     return parts.map((part, index) => {
+      // If it is a block code block
       if (part.startsWith("```") && part.endsWith("```")) {
         const lines = part.slice(3, -3).trim().split("\n");
         const language = lines[0] && !lines[0].startsWith(" ") ? lines[0] : "";
@@ -89,15 +92,87 @@ export default function RepoPage() {
             padding: "0.85rem", 
             borderRadius: "8px", 
             overflowX: "auto", 
-            margin: "8px 0",
+            margin: "12px 0",
             textAlign: "left",
             border: "1px solid var(--border)"
           }}>
-            <code style={{ fontSize: "14px", color: "var(--text-h)", fontFamily: "var(--mono)" }}>{code}</code>
+            <code style={{ 
+              fontSize: "13.5px", 
+              color: "var(--text-h)", 
+              fontFamily: "var(--mono)",
+              background: "transparent",
+              border: "none",
+              padding: 0
+            }}>{code}</code>
           </pre>
         );
       }
-      return <span key={index} style={{ whiteSpace: "pre-wrap" }}>{part}</span>;
+      
+      // For standard text sections, parse sub-elements (bold, inline code, headers, lists)
+      // 2. Escape HTML special characters to prevent raw bracket strings rendering as HTML tags
+      const escapedText = part
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      // 3. Line-by-line parsing
+      const lines = escapedText.split("\n");
+      
+      const parsedLines = lines.map((line, lineIdx) => {
+        let contentEl = line;
+
+        // Parse bold: **text**
+        contentEl = contentEl.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+        // Parse inline code: `code`
+        contentEl = contentEl.replace(/`(.*?)`/g, "<code style='font-size: 13.5px; font-family: var(--mono); background: var(--code-bg); padding: 2px 4px; border-radius: 4px; border: 1px solid var(--border)'>$1</code>");
+
+        // Check if list item: "* item" or "- item"
+        if (line.trim().startsWith("* ") || line.trim().startsWith("- ")) {
+          const listContent = contentEl.replace(/^[\s]*[\*-]\s/, "");
+          return (
+            <li 
+              key={lineIdx} 
+              style={{ marginLeft: "1.25rem", listStyleType: "disc", marginBlock: "4px" }}
+              dangerouslySetInnerHTML={{ __html: listContent }} 
+            />
+          );
+        }
+
+        // Check if header: "### title" or "## title" or "# title"
+        if (line.trim().startsWith("#")) {
+          const match = line.match(/^(#{1,6})\s+(.*)$/);
+          if (match) {
+            const level = match[1].length;
+            const headerText = match[2];
+            let parsedHeader = headerText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+            parsedHeader = parsedHeader.replace(/`(.*?)`/g, "<code style='font-size: 13.5px; font-family: var(--mono)'>$1</code>");
+            const HeaderTag = `h${Math.min(level + 1, 6)}`;
+            return (
+              <HeaderTag 
+                key={lineIdx} 
+                style={{ margin: "14px 0 6px 0", color: "var(--text-h)" }} 
+                dangerouslySetInnerHTML={{ __html: parsedHeader }}
+              />
+            );
+          }
+        }
+
+        // Standard line break handling
+        if (line.trim() === "") {
+          return <div key={lineIdx} style={{ height: "8px" }} />;
+        }
+
+        return (
+          <p 
+            key={lineIdx} 
+            style={{ margin: "0 0 6px 0" }} 
+            dangerouslySetInnerHTML={{ __html: contentEl }} 
+          />
+        );
+      });
+
+      return <div key={index}>{parsedLines}</div>;
     });
   };
 
@@ -130,8 +205,8 @@ export default function RepoPage() {
   return (
     <div style={{ 
       display: "flex", 
-      height: "calc(100vh - 5.5rem)", 
-      margin: "-2rem", 
+      height: "calc(100vh - 3.75rem)", 
+      width: "100%", 
       overflow: "hidden", 
       background: "var(--bg)" 
     }}>
@@ -143,7 +218,8 @@ export default function RepoPage() {
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
-        gap: "1.5rem"
+        gap: "1.5rem",
+        background: "var(--bg-card)"
       }}>
         <Button 
           type="link" 
@@ -224,13 +300,14 @@ export default function RepoPage() {
               margin: "auto", 
               textAlign: "center", 
               maxWidth: 450,
-              padding: "2rem",
-              background: "var(--social-bg)",
+              padding: "2.5rem 2rem",
+              background: "var(--bg-card)",
               borderRadius: "12px",
-              border: "1px solid var(--border)"
+              border: "1px solid var(--border)",
+              boxShadow: "var(--shadow)"
             }}>
               <Title level={4}>Chat with {repo.repo_name}</Title>
-              <Paragraph type="secondary">
+              <Paragraph type="secondary" style={{ fontSize: "0.95rem" }}>
                 Ask questions about the directory layout, search files, explain algorithms, or request documentation helper snippets.
               </Paragraph>
               <Tag color="purple">RAG Search Active</Tag>
@@ -245,21 +322,25 @@ export default function RepoPage() {
                   width: "100%"
                 }}
               >
-                <div style={{ 
-                  maxWidth: "75%", 
-                  padding: "0.85rem 1.15rem", 
-                  borderRadius: msg.role === "user" ? "16px 16px 0 16px" : "16px 16px 16px 0",
-                  background: msg.role === "user" ? "var(--accent-bg)" : "var(--code-bg)",
-                  border: msg.role === "user" ? "1px solid var(--accent-border)" : "1px solid var(--border)",
-                  color: "var(--text-h)",
-                  boxShadow: "0 2px 5px rgba(0,0,0,0.02)"
-                }}>
+                <div 
+                  className={msg.role === "user" ? "user-message-bubble" : ""}
+                  style={{ 
+                    maxWidth: "75%", 
+                    padding: "0.85rem 1.15rem", 
+                    borderRadius: msg.role === "user" ? "16px 16px 0 16px" : "16px 16px 16px 0",
+                    background: msg.role === "user" ? "linear-gradient(135deg, var(--accent) 0%, #6366f1 100%)" : "var(--bg-card)",
+                    border: msg.role === "user" ? "none" : "1px solid var(--border)",
+                    color: msg.role === "user" ? "#ffffff" : "var(--text-h)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.02)"
+                  }}
+                >
                   {renderMessageContent(msg.content)}
                   <div style={{ 
                     textAlign: "right", 
                     fontSize: "0.7rem", 
-                    opacity: 0.5, 
-                    marginTop: "4px" 
+                    opacity: 0.6, 
+                    marginTop: "4px",
+                    color: msg.role === "user" ? "#e0e7ff" : "var(--text)"
                   }}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
@@ -272,9 +353,10 @@ export default function RepoPage() {
               <div style={{ 
                 padding: "0.85rem 1.15rem", 
                 borderRadius: "16px 16px 16px 0",
-                background: "var(--code-bg)",
+                background: "var(--bg-card)",
                 border: "1px solid var(--border)",
-                color: "var(--text-h)"
+                color: "var(--text-h)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.02)"
               }}>
                 <Space>
                   <Spin size="small" />
@@ -290,7 +372,7 @@ export default function RepoPage() {
         <div style={{ 
           padding: "1.5rem 2rem", 
           borderTop: "1px solid var(--border)",
-          background: "var(--bg)"
+          background: "var(--bg-card)"
         }}>
           <Flex gap="middle">
             <Input
@@ -300,6 +382,7 @@ export default function RepoPage() {
               onChange={(e) => setInputText(e.target.value)}
               onPressEnter={handleSend}
               disabled={sending}
+              style={{ borderRadius: 8 }}
             />
             <Button 
               type="primary" 
@@ -307,7 +390,7 @@ export default function RepoPage() {
               icon={<SendOutlined />}
               onClick={handleSend}
               loading={sending}
-              style={{ background: "var(--accent)", borderColor: "var(--accent)" }}
+              style={{ background: "var(--accent)", borderColor: "var(--accent)", borderRadius: 8 }}
             />
           </Flex>
         </div>
