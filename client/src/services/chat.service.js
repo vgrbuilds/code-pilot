@@ -9,3 +9,8 @@ export const sendMessage = async (repoId, message) => {
     const response = await api.post(`/chat/${repoId}/message`, { message });
     return response.data;
 };
+
+export const getUserConversations = async () => {
+    const response = await api.get("/chat/conversations");
+    return response.data;
+};
