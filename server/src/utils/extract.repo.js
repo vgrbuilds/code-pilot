@@ -57,6 +57,10 @@ const walkDirectory = async (rootDir, currentDir, files) => {
             await walkDirectory(rootDir, fullPath, files);
         } else {
             if (!shouldProcessFile(entry.name)) continue;
+            
+            // Ignore lock files which are extremely large and uninformative for codebase analysis
+            const lowerName = entry.name.toLowerCase();
+            if (lowerName === "package-lock.json" || lowerName === "yarn.lock" || lowerName === "pnpm-lock.yaml") continue;
 
             const content = await fs.readFile(fullPath, "utf8");
 
