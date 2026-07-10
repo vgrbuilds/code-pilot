@@ -156,3 +156,26 @@ export const sendMessage = async (req, res) => {
         });
     }
 };
+
+/**
+ * Retrieve all conversation threads for the logged-in user
+ */
+export const getUserConversations = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const chats = await Chat.find({ user_id: userId })
+            .populate('repo_id', 'repo_name repo_url languages tags')
+            .sort({ updatedAt: -1 });
+
+        return res.status(200).json({
+            message: "User conversations retrieved successfully",
+            data: chats
+        });
+    } catch (error) {
+        console.error("Error in getUserConversations controller:", error);
+        return res.status(500).json({
+            message: "Failed to retrieve user conversations",
+            error: error.message
+        });
+    }
+};

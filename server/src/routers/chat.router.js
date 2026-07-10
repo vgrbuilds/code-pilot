@@ -1,5 +1,5 @@
 import express from "express";
-import { getChatHistory, sendMessage } from "../controllers/chat.controller.js";
+import { getChatHistory, sendMessage, getUserConversations } from "../controllers/chat.controller.js";
 import { authenticateUser } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -7,6 +7,7 @@ const router = express.Router();
 // Secure all chat paths with JWT authentication
 router.use(authenticateUser);
 
+router.get("/conversations", getUserConversations);
 router.get("/:repoId/history", getChatHistory);
 router.post("/:repoId/message", sendMessage);
 
